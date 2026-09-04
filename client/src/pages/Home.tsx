@@ -1,33 +1,52 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { useState } from "react";
+import { ArrowRight, BadgeCheck, CarFront, Check, ChevronDown, Gauge, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { mapValuationError, type StructuredValuationError } from "../../../shared/valuationErrors";
+const fuelOptions = ["CNG", "Diesel", "LPG", "Petrol"] as const;
+const sellerOptions = ["Dealer", "Individual", "Trustmark Dealer"] as const;
+const transmissionOptions = ["Automatic", "Manual"] as const;
+const ownerOptions = ["First Owner", "Second Owner", "Third Owner", "Fourth & Above Owner", "Test Drive Car"] as const;
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+type FormState = {
+  carName: string; year: string; kmDriven: string; mileage: string; engine: string; maxPower: string; seats: string;
+  fuel: typeof fuelOptions[number]; sellerType: typeof sellerOptions[number]; transmission: typeof transmissionOptions[number]; owner: typeof ownerOptions[number];
+};
+
+const initialForm: FormState = { carName: "", year: "", kmDriven: "", mileage: "", engine: "", maxPower: "", seats: "", fuel: "Petrol", sellerType: "Individual", transmission: "Manual", owner: "First Owner" };
+const money = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+
+
+function Field({ label, hint, value, onChange, type = "text", min, max, step, placeholder, error }: { label: string; hint?: string; value: string; onChange: (value: string) => void; type?: string; min?: string; max?: string; step?: string; placeholder?: string; error?: string }) {
+  return <label className="field-wrap"><span className="field-label">{label}{hint && <small>{hint}</small>}</span><input aria-invalid={Boolean(error)} className={`field-input ${error ? "field-error" : ""}`} value={value} onChange={(event) => onChange(event.target.value)} type={type} min={min} max={max} step={step} placeholder={placeholder} />{error && <span className="field-message">{error}</span>}</label>;
+}
+function SelectField({ label, value, onChange, options, error }: { label: string; value: string; onChange: (value: string) => void; options: readonly string[]; error?: string }) {
+  return <label className="field-wrap"><span className="field-label">{label}</span><span className="select-shell"><select aria-invalid={Boolean(error)} className={`field-input select-input ${error ? "field-error" : ""}`} value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select><ChevronDown size={16} /></span>{error && <span className="field-message">{error}</span>}</label>;
+}
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
-
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
-  );
+  const [form, setForm] = useState(initialForm);
+  const [result, setResult] = useState<{ price: number; carName: string; summary: { year: string; kmDriven: string; fuel: string; transmission: string; owner: string } } | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const prediction = trpc.valuation.predict.useMutation({ onSuccess: (data) => setResult({ ...data, summary: { year: form.year, kmDriven: form.kmDriven, fuel: form.fuel, transmission: form.transmission, owner: form.owner } }), onError: (error) => { const mapped = mapValuationError(error as unknown as StructuredValuationError); setErrors((current) => ({ ...current, ...mapped.fieldErrors })); toast.error(mapped.message); } });
+  const set = (key: keyof FormState) => (value: string) => { setForm((current) => ({ ...current, [key]: value })); setErrors((current) => ({ ...current, [key]: undefined })); };
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const nextErrors: Partial<Record<keyof FormState, string>> = {};
+    if (!form.carName.trim()) nextErrors.carName = "Enter the car name.";
+    const ranges: Record<string, [number, number]> = { year: [1980, new Date().getFullYear()], kmDriven: [0, 1000000], mileage: [0.1, 100], engine: [1, 10000], maxPower: [0.1, 2000], seats: [1, 15] };
+    (Object.keys(ranges) as (keyof FormState)[]).forEach((key) => { const value = Number(form[key]); const [min, max] = ranges[key] as [number, number]; if (!form[key] || !Number.isFinite(value)) nextErrors[key] = "Enter a valid number."; else if (value < min || value > max) nextErrors[key] = `Use a value from ${min} to ${max}.`; });
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { toast.error("Check the highlighted vehicle details."); return; }
+    prediction.mutate({ carName: form.carName.trim(), year: Number(form.year), kmDriven: Number(form.kmDriven), mileage: Number(form.mileage), engine: Number(form.engine), maxPower: Number(form.maxPower), seats: Number(form.seats), fuel: form.fuel, sellerType: form.sellerType, transmission: form.transmission, owner: form.owner });
+  };
+  const reset = () => { setResult(null); setErrors({}); setForm(initialForm); window.scrollTo({ top: document.getElementById("estimator")?.offsetTop ?? 0, behavior: "smooth" }); };
+  return <div className="site-shell">
+    <header className="topbar"><a className="brand" href="#top" aria-label="CarValue home"><span className="brand-mark"><CarFront size={20} strokeWidth={2.4} /></span><span>CarValue</span></a><nav><a href="#how-it-works">How it works</a><a href="#estimator">Estimator</a></nav><a className="nav-cta" href="#estimator">Get estimate <ArrowRight size={15} /></a></header>
+    <main id="top">
+      <section className="hero-section"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot" /> Intelligent valuations, made simple</div><h1>Know what<br /><em>your car is worth.</em></h1><p className="hero-subtitle">A clear, data-led estimate for your next move. Enter your car's details and get a thoughtful market valuation in seconds.</p><a href="#estimator" className="primary-button">Estimate my car <ArrowRight size={17} /></a><div className="hero-trust"><ShieldCheck size={16} /><span>Private by design · No sign-up required</span></div></div><div className="hero-art" aria-label="Abstract automotive illustration"><div className="art-glow" /><div className="art-grid" /><div className="car-orbit orbit-one" /><div className="car-orbit orbit-two" /><div className="car-silhouette"><div className="car-window" /><div className="car-body" /><div className="wheel wheel-left" /><div className="wheel wheel-right" /><div className="headlight" /></div><div className="art-caption"><span className="caption-line" /> <span>Precision, without the guesswork</span></div></div></section>
+      <section className="estimator-section" id="estimator"><div className="section-heading"><div><div className="eyebrow">01 · Your vehicle</div><h2>Tell us about your car.</h2></div><p>Use the details from your registration or service records for the most useful estimate.</p></div><div className="estimator-layout"><form className="form-card" onSubmit={submit}><div className="form-card-head"><div><span className="card-kicker">Vehicle profile</span><h3>Specifications</h3></div><span className="form-step">1 <span>/ 1</span></span></div><div className="form-grid"><div className="full-field"><Field label="Car name" value={form.carName} onChange={set("carName")} placeholder="e.g. Maruti Swift Dzire VDI" error={errors.carName} /></div><Field label="Year" value={form.year} onChange={set("year")} type="number" min="1980" max={String(new Date().getFullYear())} placeholder="2018" error={errors.year} /><Field label="Kilometers driven" hint="km" value={form.kmDriven} onChange={set("kmDriven")} type="number" min="0" max="1000000" placeholder="48000" error={errors.kmDriven} /><Field label="Mileage" hint="km/l" value={form.mileage} onChange={set("mileage")} type="number" min="0.1" max="100" step="0.1" placeholder="20.4" error={errors.mileage} /><Field label="Engine" hint="cc" value={form.engine} onChange={set("engine")} type="number" min="1" max="10000" placeholder="1197" error={errors.engine} /><Field label="Max power" hint="bhp" value={form.maxPower} onChange={set("maxPower")} type="number" min="0.1" max="2000" step="0.1" placeholder="83.1" error={errors.maxPower} /><Field label="Seats" value={form.seats} onChange={set("seats")} type="number" min="1" max="15" placeholder="5" error={errors.seats} /><SelectField label="Fuel" value={form.fuel} onChange={set("fuel")} options={fuelOptions} error={errors.fuel} /><SelectField label="Seller type" value={form.sellerType} onChange={set("sellerType")} options={sellerOptions} error={errors.sellerType} /><SelectField label="Transmission" value={form.transmission} onChange={set("transmission")} options={transmissionOptions} error={errors.transmission} /><SelectField label="Owner history" value={form.owner} onChange={set("owner")} options={ownerOptions} error={errors.owner} /></div><button className="submit-button" type="submit" disabled={prediction.isPending}>{prediction.isPending ? <><span className="spinner" /> Calculating your estimate…</> : <>Predict price <ArrowRight size={18} /></>}</button><p className="form-note"><BadgeCheck size={14} /> Your information is used only to calculate this estimate.</p></form><aside className={`result-card ${result ? "has-result" : ""}`}>{result ? <><div className="result-top"><span className="result-icon"><Check size={18} /></span><span>Estimate ready</span></div><div className="result-label">Estimated market value</div><div className="result-price">₹ {money.format(result.price)}</div><p className="result-copy">Based on the specifications you shared for <strong>{result.carName}</strong>.</p><div className="result-summary"><span>{result.summary.year} · {result.summary.kmDriven} km</span><span>{result.summary.fuel} · {result.summary.transmission}</span><span>{result.summary.owner}</span></div><div className="result-rule" /><div className="disclaimer"><Sparkles size={15} /><span>This is an indicative estimate, not a guarantee of the final selling price. Actual value can vary with condition, location, and market timing.</span></div><button type="button" className="again-button" onClick={reset}><RotateCcw size={15} /> Predict again</button></> : <><div className="result-placeholder-icon"><Gauge size={22} /></div><div className="placeholder-label">Your estimate will appear here</div><p>Complete your vehicle profile to see a clear, model-powered valuation.</p><div className="placeholder-lines"><span /><span /><span /></div></>}</aside></div></section>
+      <section className="how-section" id="how-it-works"><div className="eyebrow">02 · A better starting point</div><div className="how-heading"><h2>Less guesswork.<br /><em>More confidence.</em></h2><p>CarValue turns the details you already know into a useful starting point for your next conversation, listing, or decision.</p></div><div className="process-grid"><div className="process-item"><span>01</span><h3>Enter your details</h3><p>Share the basics: age, mileage, engine, and ownership history.</p></div><div className="process-item"><span>02</span><h3>We analyze the pattern</h3><p>Your vehicle profile is passed to the trained valuation model.</p></div><div className="process-item"><span>03</span><h3>See your estimate</h3><p>Get a straightforward rupee estimate to guide your next step.</p></div></div></section>
+    </main><footer><a className="brand" href="#top"><span className="brand-mark"><CarFront size={17} /></span><span>CarValue</span></a><span>Thoughtful estimates for real-world decisions.</span><span>© {new Date().getFullYear()} CarValue</span></footer>
+  </div>;
 }
