@@ -9,7 +9,7 @@
 - [x] Add result card, input summary, disclaimer, loading, validation, and error states
 - [x] Add local and production setup documentation for the Python model dependency
 - [x] Run type checks, tests, and visual verification
-- [ ] Save the completed project checkpoint for delivery
+- [x] Save the completed project checkpoint for delivery
 
 ## Request history
 
