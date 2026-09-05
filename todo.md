@@ -47,3 +47,15 @@
 - [x] Assert structured field errors from an actual invalid valuation tRPC call where the runtime exposes them
 - [x] Feed the actual tRPC validation error instance into the shared mapper in test coverage
 - [x] Directly assert the runtime tRPC error cause or formatted data contains the mileage field error
+
+## GitHub sync
+
+- [ ] Locate and verify the target GitHub repository `keshav-xb`
+- [ ] Push the completed CarValue project to the target repository
+- [ ] Confirm the remote repository and share its URL
+
+## GitHub sync
+
+- [ ] Locate and verify the target GitHub repository `Keshav-xb/CarValue`
+- [ ] Push the completed CarValue project to the target repository
+- [ ] Confirm the remote repository and share its URL
