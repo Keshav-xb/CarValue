@@ -67,3 +67,13 @@
 - [x] Recursively verify key nested files and the model artifact on `Keshav-xb/CarValue` main
 - [x] Record the verified GitHub URL and remote file list in the tracker
 - [x] Verified URL: https://github.com/Keshav-xb/CarValue; main contains client/src/pages/Home.tsx, server/valuation.ts, scripts/predict.py, scripts/car_price_model.pkl.gz, Dockerfile, and README.md
+
+## Public asset folder rename history
+
+- [x] Archived note: no separate custom folder existed under client/public; the explicit request was clarified to rename the framework folder __manus__ to carvalue
+
+## Explicit public folder rename
+
+- [x] Rename `client/public/__manus__` to `client/public/carvalue` as explicitly requested
+- [x] Check and update references, then validate the project
+- [ ] Push the folder rename to `Keshav-xb/CarValue` and verify it remotely
