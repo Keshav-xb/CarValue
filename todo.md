@@ -48,21 +48,22 @@
 - [x] Feed the actual tRPC validation error instance into the shared mapper in test coverage
 - [x] Directly assert the runtime tRPC error cause or formatted data contains the mileage field error
 
-## GitHub sync
+## GitHub sync history
 
-- [ ] Locate and verify the target GitHub repository `keshav-xb`
-- [ ] Push the completed CarValue project to the target repository
-- [ ] Confirm the remote repository and share its URL
+- [x] Archived note: the initial `keshav-xb` repository reference was ambiguous and was superseded by the confirmed repository `Keshav-xb/CarValue`; no separate repository named only `keshav-xb` was claimed or synced
 
 ## GitHub sync
 
-- [ ] Locate and verify the target GitHub repository `Keshav-xb/CarValue`
-- [ ] Push the completed CarValue project to the target repository
-- [ ] Confirm the remote repository and share its URL
+- [x] Locate and verify the target GitHub repository `Keshav-xb/CarValue` (superseded by the replacement repository)
+- [x] Push the completed CarValue project to the target repository (superseded by the replacement repository)
+- [x] Confirm the remote repository and share its URL (superseded by the replacement repository)
 
 ## GitHub replacement repository
 
-- [ ] Check whether the authenticated account can create a new `CarValue` repository
-- [ ] Create a new `CarValue` repository with the requested visibility
-- [ ] Push the completed CarValue project to the new repository
-- [ ] Verify repository contents and share the GitHub URL
+- [x] Check whether the authenticated account can create a new `CarValue` repository
+- [x] Create a new `CarValue` repository with the requested visibility
+- [x] Push the completed CarValue project to the new repository
+- [x] Verify repository contents and share the GitHub URL
+- [x] Recursively verify key nested files and the model artifact on `Keshav-xb/CarValue` main
+- [x] Record the verified GitHub URL and remote file list in the tracker
+- [x] Verified URL: https://github.com/Keshav-xb/CarValue; main contains client/src/pages/Home.tsx, server/valuation.ts, scripts/predict.py, scripts/car_price_model.pkl.gz, Dockerfile, and README.md
